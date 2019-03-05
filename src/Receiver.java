@@ -59,15 +59,16 @@ public class Receiver extends Thread {
             if ("end".equals(received)) {
                 break;
             }
-            if (received.contains("Discovery") && Integer.parseInt(received.substring(received.lastIndexOf('r') + 2)) != id) {
+            String new_id = received.substring(received.lastIndexOf('r') + 2);
+            if (received.contains("Discovery") && Integer.parseInt(new_id) != id) {
                 try {
-                    send.multicast("Hello Peer " + received.substring(received.lastIndexOf('r') + 2) + " I'm Peer " + id);
+                    send.multicast("Hello Peer " + new_id + " I'm Peer " + id);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
             if (received.contains("I'm Peer")){
-                peers.add(received.substring(received.lastIndexOf('r') + 2));
+                peers.add(new_id);
             }
 
             System.out.println(received);
