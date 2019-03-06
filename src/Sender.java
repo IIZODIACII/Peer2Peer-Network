@@ -8,16 +8,15 @@ public class Sender {
     private InetAddress group;
     private byte[] buf;
     private int port;
-    private String host;
 
-    public Sender(int p, String h){
-        port = p;
-        host = h;
+    public Sender (int port, InetAddress group){
+        this.port = port;
+        this.group = group;
+
     }
 
     public void multicast(String multicastMessage) throws IOException {
         socket = new DatagramSocket();
-        group = InetAddress.getByName(host);
         buf = multicastMessage.getBytes();
 
         DatagramPacket packet = new DatagramPacket(buf, buf.length, group, port);

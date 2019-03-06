@@ -5,10 +5,10 @@ public class Test {
     private static String host = "230.0.0.0";
 
     public static void main (String [] args) throws IOException {
-        Sender sender = new Sender(port, host);
+        /*Sender sender = new Sender(port, host);
         sender.multicast("Hello");
         sender.multicast("World");
         sender.multicast("!");
         sender.multicast("end");
-    }
+    */}
 }

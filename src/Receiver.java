@@ -2,7 +2,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -12,16 +11,15 @@ public class Receiver extends Thread {
     protected MulticastSocket socket = null;
     protected byte[] buf = new byte[256];
     private Sender send;
-    private int port;
-    private String host;
+    private InetAddress group;
     private int id = new Random(System.currentTimeMillis()).nextInt();
-    private ArrayList<String> peers = new ArrayList<String>();
+    private ArrayList<String> peers = new ArrayList<>();
 
-    public Receiver(int p, String h){
+    public Receiver(int port, InetAddress group){
         id = abs(id);
-        port = p;
-        host = h;
-        send = new Sender(port, host);
+        this.group = group;
+
+        send = new Sender(port, group);
         try {
             socket = new MulticastSocket(port);
         } catch (IOException e) {
@@ -31,14 +29,6 @@ public class Receiver extends Thread {
     }
 
     public void run() {
-
-        InetAddress group = null;
-        try {
-            group = InetAddress.getByName(host);
-        } catch (UnknownHostException e) {
-            System.out.println("System failed to resolve the group's ip address");
-            e.printStackTrace();
-        }
         try {
             socket.joinGroup(group);
             send.multicast("Discovery Request From Peer " + id);
@@ -54,24 +44,24 @@ public class Receiver extends Thread {
                 System.out.println("Error while receiving packets");
                 e.printStackTrace();
             }
-            String received = new String(packet.getData(), 0, packet.getLength());
+            String resp = new String(packet.getData(), 0, packet.getLength());
 
-            if ("end".equals(received)) {
+            if ("end".equals(resp)) {
                 break;
             }
-            String new_id = received.substring(received.lastIndexOf('r') + 2);
-            if (received.contains("Discovery") && Integer.parseInt(new_id) != id) {
+            String new_id = resp.substring(resp.lastIndexOf('r') + 2);
+            if (resp.contains("Discovery") && Integer.parseInt(new_id) != id) {
                 try {
                     send.multicast("Hello Peer " + new_id + " I'm Peer " + id);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
-            if (received.contains("I'm Peer")){
+            if (resp.contains("I'm Peer")){
                 peers.add(new_id);
             }
 
-            System.out.println(received);
+            System.out.println(resp);
         }
         try {
             socket.leaveGroup(group);
