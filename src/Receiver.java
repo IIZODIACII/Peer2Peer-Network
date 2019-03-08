@@ -3,6 +3,8 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Random;
 
 import static java.lang.Math.abs;
@@ -14,11 +16,11 @@ public class Receiver extends Thread {
     private InetAddress group;
     private int id = new Random(System.currentTimeMillis()).nextInt();
     private ArrayList<String> peers = new ArrayList<>();
-    publice ArrayList<String> strs = new ArrayList<>();
+    public Queue<String> strs = new LinkedList<>();
     public Receiver(int port, InetAddress group){
         id = abs(id);
-        this.group = group;
 
+        this.group = group;
         send = new Sender(port, group);
         try {
             socket = new MulticastSocket(port);
@@ -36,7 +38,7 @@ public class Receiver extends Thread {
             System.out.println("System Failed to join the group");
             e.printStackTrace();
         }
-        while (true) {
+        while (strs.size()<50) {
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
             try {
                 socket.receive(packet);
@@ -45,7 +47,7 @@ public class Receiver extends Thread {
                 e.printStackTrace();
             }
             String resp = new String(packet.getData(), 0, packet.getLength());
-
+            strs.add(resp);
             if ("end".equals(resp)) {
                 break;
             }
@@ -60,8 +62,7 @@ public class Receiver extends Thread {
             if (resp.contains("I'm Peer")){
                 peers.add(new_id);
             }
-
-            System.out.println(resp);
+            System.out.println(strs.remove());
         }
         try {
             socket.leaveGroup(group);
