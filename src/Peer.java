@@ -15,6 +15,5 @@ public class Peer {
 
         receiver.start();
 
-
     }
 }

@@ -14,7 +14,7 @@ public class Receiver extends Thread {
     private InetAddress group;
     private int id = new Random(System.currentTimeMillis()).nextInt();
     private ArrayList<String> peers = new ArrayList<>();
-
+    publice ArrayList<String> strs = new ArrayList<>();
     public Receiver(int port, InetAddress group){
         id = abs(id);
         this.group = group;
