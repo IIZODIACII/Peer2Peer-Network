@@ -3,6 +3,8 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Random;
 
 import static java.lang.Math.abs;
@@ -13,6 +15,7 @@ public class Receiver extends Thread {
     private Sender send;
     private InetAddress group;
     private int id = new Random(System.currentTimeMillis()).nextInt();
+    public Queue<String> strs=new LinkedList<>();
     private ArrayList<String> peers = new ArrayList<>();
 
     public Receiver(int port, InetAddress group){
@@ -36,7 +39,7 @@ public class Receiver extends Thread {
             System.out.println("System Failed to join the group");
             e.printStackTrace();
         }
-        while (true) {
+        while (strs.size()<20) {
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
             try {
                 socket.receive(packet);
@@ -45,7 +48,7 @@ public class Receiver extends Thread {
                 e.printStackTrace();
             }
             String resp = new String(packet.getData(), 0, packet.getLength());
-
+            strs.add(resp);
             if ("end".equals(resp)) {
                 break;
             }
@@ -61,7 +64,7 @@ public class Receiver extends Thread {
                 peers.add(new_id);
             }
 
-            System.out.println(resp);
+            System.out.println(strs.remove());
         }
         try {
             socket.leaveGroup(group);
