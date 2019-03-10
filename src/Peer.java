@@ -11,10 +11,8 @@ public class Peer {
         group = InetAddress.getByName(host);
 
         Receiver receiver = new Receiver(port, group);
-        Sender sender = new Sender(port, group);
 
         receiver.start();
-
 
     }
 }

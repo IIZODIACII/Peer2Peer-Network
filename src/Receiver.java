@@ -10,18 +10,26 @@ import java.util.Random;
 import static java.lang.Math.abs;
 
 public class Receiver extends Thread {
+    public Queue<String> strs = new LinkedList<>();
     protected MulticastSocket socket = null;
     protected byte[] buf = new byte[256];
     private Sender send;
     private InetAddress group;
-    private int id = new Random(System.currentTimeMillis()).nextInt();
-    public Queue<String> strs=new LinkedList<>();
+    private int port;
+    private int check;
+    private int c;
+    private RandomString rand = new RandomString();
+    private int id = abs(new Random(System.currentTimeMillis()).nextInt());
     private ArrayList<String> peers = new ArrayList<>();
 
-    public Receiver(int port, InetAddress group){
-        id = abs(id);
+    public Receiver(int port, InetAddress group) {
         this.group = group;
+        this.port = port;
+        check = 0;
+        c = 0;
+    }
 
+    public void run() {
         send = new Sender(port, group);
         try {
             socket = new MulticastSocket(port);
@@ -29,17 +37,18 @@ public class Receiver extends Thread {
             System.out.println("System failed to connect to the port");
             e.printStackTrace();
         }
-    }
-
-    public void run() {
         try {
             socket.joinGroup(group);
-            send.multicast("Discovery Request From Peer " + id);
+            if (check == 0) {
+                send.multicast(id + " Discovery");
+                check++;
+            }
         } catch (IOException e) {
             System.out.println("System Failed to join the group");
             e.printStackTrace();
         }
-        while (strs.size()<20) {
+
+        while (true) {
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
             try {
                 socket.receive(packet);
@@ -48,31 +57,58 @@ public class Receiver extends Thread {
                 e.printStackTrace();
             }
             String resp = new String(packet.getData(), 0, packet.getLength());
-            strs.add(resp);
-            if ("end".equals(resp)) {
-                break;
-            }
-            String new_id = resp.substring(resp.lastIndexOf('r') + 2);
-            if (resp.contains("Discovery") && Integer.parseInt(new_id) != id) {
-                try {
-                    send.multicast("Hello Peer " + new_id + " I'm Peer " + id);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (resp.contains("I'm Peer")){
-                peers.add(new_id);
-            }
 
-            System.out.println(strs.remove());
+            String new_id = resp.substring(0, resp.indexOf(' '));
+            if ((Integer.parseInt(new_id)) != this.id) {
+                strs.add(resp);
+                if (strs.size() == 20) {
+                    try {
+                        send.multicast(this.id + " Wait");
+                        for (int i = 0; i < 20; i++)
+                            strs.remove();
+                        send.multicast(this.id + " Continue");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (resp.contains("Discovery") && !peers.contains(new_id)) {
+                    try {
+                        send.multicast(id + " Response");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (resp.contains("Response") && !peers.contains(new_id)) {
+                    peers.add(new_id);
+                }
+
+
+                if (!resp.contains("Wait") || resp.contains("Continue") || !resp.isBlank()) {
+                    try {
+                        if (c < 100) {
+                            send.multicast(id + " " + rand.fake());
+                            c++;
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                System.out.println(resp);
+            }
         }
-        try {
+/*        try {
             socket.leaveGroup(group);
         } catch (IOException e) {
             System.out.println("System Failed to leave the group");
             e.printStackTrace();
         }
-        socket.close();
+        socket.close();*/
+
+    }
+
+    public void new_thread() throws IOException {
+        new Thread(this).start();
     }
 
 }
